@@ -19,3 +19,4 @@ websockets==10.4
 wheel==0.37.1
 mpmath==1.2.1
 sympy==1.11.1
+gunicorn==20.1.0
