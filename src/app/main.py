@@ -2,7 +2,6 @@ import http.client
 import json
 import os
 from datetime import datetime
-
 import cv2
 import sympy
 from fastapi import FastAPI, HTTPException, Depends, UploadFile
