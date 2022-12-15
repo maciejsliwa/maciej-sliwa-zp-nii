@@ -2,15 +2,25 @@ import http.client
 import json
 import os
 from datetime import datetime
+from shutil import rmtree
 import cv2
 import sympy
 from fastapi import FastAPI, HTTPException, Depends, UploadFile
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.responses import FileResponse
+from starlette.background import BackgroundTask
 
 app = FastAPI()
 MY_DOMAIN = os.environ.get('AUTH0_SRV', '')
 PAYLOAD = os.environ.get('AUTH0_PAYLOAD', '')
+TMP_DIR = "testfiles"
+PATH_INPUT_IMG = "testfiles//{0}"
+PATH_OUTPUT_IMG = "testfiles//inv_{0}"
+
+
+def cleanup():
+    rmtree(TMP_DIR)
+
 
 @app.get("/")
 async def root():
@@ -61,11 +71,13 @@ async def get_time(token: HTTPAuthorizationCredentials = Depends(HTTPBearer())):
 @app.post("/picture/invert")
 async def picture_inverting(file: UploadFile):
     contents = await file.read()
-    if not os.path.exists("testfiles"):
-        os.makedirs("testfiles")
-    with open(f"testfiles//{file.filename}", "wb") as f:
+    path_input = PATH_INPUT_IMG.format(file.filename)
+    path_output = PATH_OUTPUT_IMG.format(file.filename)
+    if not os.path.exists(TMP_DIR):
+        os.makedirs(TMP_DIR)
+    with open(path_input, "wb") as f:
         f.write(contents)
-    img = cv2.imread(f"testfiles//{file.filename}")
+    img = cv2.imread(path_input)
     img_invert = cv2.bitwise_not(img)
-    cv2.imwrite(f"testfiles//inv_{file.filename}", img_invert)
-    return FileResponse(f"testfiles//inv_{file.filename}")
+    cv2.imwrite(path_output, img_invert)
+    return FileResponse(path_output, background=BackgroundTask(cleanup))
